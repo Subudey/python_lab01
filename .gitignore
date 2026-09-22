@@ -1,4 +1,4 @@
 .venv
 __pycache__/
 .idea
-history.json
+src/resources/history.json
