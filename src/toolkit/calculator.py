@@ -1,4 +1,3 @@
-# mypy: disable-error-code="arg-type"
 """Калькулятор, вычисляющий значение выражения."""
 
 from .errors import (
@@ -9,6 +8,8 @@ from .errors import (
     MissingOperatorError,
     TwoBinaryOperatorsError,
 )
+
+Token = tuple[str, float | str]
 
 
 def tokenize(expr: str) -> list:
@@ -29,7 +30,7 @@ def tokenize(expr: str) -> list:
             являющийся цифрой, точкой, оператором или пробелом.
     """
 
-    tokens = []
+    tokens: list[Token] = []
     i = 0
 
     while i < len(expr):
@@ -131,7 +132,7 @@ def resolve_unary(tokens: list) -> list:
         бинарные операторы.
     """
 
-    result = []
+    result: list[Token] = []
 
     i = 0
     while i < len(tokens):
@@ -175,7 +176,7 @@ def calculate(tokens: list) -> float:
     """
 
     tokens = resolve_unary(tokens)
-    apply_priority_operators = []
+    apply_priority_operators: list[Token] = []
 
     i = 0
     while i < len(tokens):
@@ -202,9 +203,12 @@ def calculate(tokens: list) -> float:
             i += 1
 
     result = apply_priority_operators[0][1]
+    assert isinstance(result, float)
+
     for i in range(1, len(apply_priority_operators) - 1, 2):
         operator = apply_priority_operators[i][1]
         digit = apply_priority_operators[i + 1][1]
+        assert isinstance(digit, float)
 
         result = (result + digit if operator == '+'
                   else result - digit)
