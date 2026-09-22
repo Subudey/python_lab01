@@ -1,5 +1,6 @@
 """Калькулятор, вычисляющий значение выражения."""
 
+from .constants import NUMBER_PATTERN
 from .errors import (
     DivisionByZeroError,
     EmptyExpressionError,
@@ -11,12 +12,12 @@ from .errors import (
 
 Token = tuple[str, float | str]
 
-
 def tokenize(expr: str) -> list:
     """Разбивает строку арифметического выражения на список токенов.
 
-    Проходит по строке посимвольно, распознаёт числа,
-    операторы +, -, *, / и игнорирует пробелы между токенами.
+    Проходит по строке слева направо, на каждом шаге ищет либо
+    оператор, либо пробел, либо число по регулярному выражению.
+    Игнорирует пробелы между токенами.
 
     Args:
         expr: исходная строка выражения.
@@ -34,34 +35,22 @@ def tokenize(expr: str) -> list:
     i = 0
 
     while i < len(expr):
-        if expr[i].isdigit():
-            token = ""
-            dot_cnt = 0
-
-            while expr[i].isdigit() or expr[i] == ".":
-                if expr[i] == '.':
-                    dot_cnt += 1
-
-                if dot_cnt > 1:
-                    break
-
-                token += expr[i]
-
-                i += 1
-                if i >= len(expr):
-                    break
-
-            tokens.append(("digit", float(token)))
-
-        elif expr[i] in '+-*/':
+        if expr[i] in '+-*/':
             tokens.append(("operator", expr[i]))
             i += 1
+            continue
 
-        elif expr[i] == ' ':
+        if expr[i] == ' ':
             i += 1
+            continue
 
-        else:
-            raise InvalidCharacterError("Неверный аргумент")
+        number_match = NUMBER_PATTERN.match(expr, i)
+        if number_match:
+            tokens.append(("digit", float(number_match.group())))
+            i = number_match.end()
+            continue
+
+        raise InvalidCharacterError("Неверный аргумент")
 
     return tokens
 
