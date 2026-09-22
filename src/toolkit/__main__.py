@@ -6,6 +6,7 @@ import sys
 from .calculator import calculate, tokenize, validate
 from .converter import convert
 from .errors import ToolkitError
+from .history_writer import save_to_history
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -53,6 +54,9 @@ def main() -> None:
             tokens = tokenize(args.expression)
             validate(tokens)
             result = calculate(tokens)
+
+            save_to_history(args.expression, result)
+
             print(result)
 
         elif args.command == "convert":

@@ -1,8 +1,14 @@
-"""Таблицы коэффициентов и допустимых единиц измерения для конвертера, а также паттерн для tokenize."""
+"""Хранит константы необходимые для работы программы."""
+import json
 import re
-
-LENGTH_UNITS = {"mm": 0.001, "cm": 0.01, "m": 1.0, "km": 1000.0}
-MASS_UNITS = {"g": 1.0, "kg": 1000.0}
-TEMPERATURE_UNITS = {"c", "f", "k"}
+from pathlib import Path
 
 NUMBER_PATTERN = re.compile(r"\d+\.?\d*")
+
+CONFIG_PATH = Path(__file__).parent.parent / "resources" / "units_config.json"
+_config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+LENGTH_UNITS = _config["length"]
+MASS_UNITS = _config["mass"]
+TEMPERATURE_UNITS = set(_config["temperature"])
+
+HISTORY_PATH = Path(__file__).parent.parent / "resources" / "history.json"
