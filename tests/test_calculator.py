@@ -2,7 +2,7 @@
 
 import pytest
 
-from toolkit.calculator import calculate, resolve_unary, tokenize, validate
+from toolkit.calculator import calculate, tokenize, validate
 from toolkit.errors import (
     DivisionByZeroError,
     EmptyExpressionError,
@@ -72,11 +72,10 @@ def test_mixed_priority_expression():
     assert run("10 - 2 * 3 + 4 / 2") == 6.0
 
 
-def test_resolve_unary_collapses_sign():
-    """Проверяет, что resolve_unary сворачивает знак и число в один токен."""
-    tokens = tokenize("5 * -3")
-    resolved = resolve_unary(tokens)
-    assert resolved == [("digit", 5.0), ("operator", "*"), ("digit", -3.0)]
+def test_multiple_unary_operators():
+    """Проверяет, что цепочка из нескольких унарных знаков работает."""
+    assert run("5 - - 3") == 8.0
+    assert run("5 - - - 3") == 2.0
 
 
 # --- Негативные тесты ---

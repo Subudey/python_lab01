@@ -10,7 +10,6 @@ from .errors import (
     TwoBinaryOperatorsError,
 )
 
-Token = tuple[str, float | str]
 
 def tokenize(expr: str) -> list:
     """Разбивает строку арифметического выражения на список токенов.
@@ -31,7 +30,7 @@ def tokenize(expr: str) -> list:
             являющийся цифрой, точкой, оператором или пробелом.
     """
 
-    tokens: list[Token] = []
+    tokens = []
     i = 0
 
     while i < len(expr):
@@ -46,7 +45,7 @@ def tokenize(expr: str) -> list:
 
         number_match = NUMBER_PATTERN.match(expr, i)
         if number_match:
-            tokens.append(("digit", float(number_match.group())))
+            tokens.append(("digit", number_match.group()))
             i = number_match.end()
             continue
 
@@ -58,19 +57,21 @@ def tokenize(expr: str) -> list:
 def validate(tokens: list) -> None:
     """Проверяет список токенов на корректность.
 
-    Убеждается, что выражение не пустое, не начинается и не
-    заканчивается недопустимым оператором, не содержит двух чисел или
-    двух бинарных операторов подряд.
+    Использует модель "предыдущий токен": унарные + и - допустимы в
+    любом количестве подряд (в начале выражения, после числа как
+    бинарный знак, после другого оператора как очередной унарный).
+    Операторы * и / допустимы только сразу после числа.
 
     Args:
         tokens: список токенов арифметического выражения.
 
     Raises:
         EmptyExpressionError: если список токенов пуст.
-        MissingNumError: если выражение начинается или заканчивается
-            оператором без числа на нужном месте.
-        TwoBinaryOperatorsError: если два бинарных оператора идут
-            подряд без допустимого унарного знака между ними.
+        MissingNumError: если операнд ожидался, но его нет — в начале,
+            перед * или / без предшествующего числа, либо в конце
+            выражения.
+        TwoBinaryOperatorsError: если оператор * или / идёт сразу
+            после другого оператора.
         MissingOperatorError: если два числа идут подряд без
             оператора между ними.
     """
@@ -78,40 +79,34 @@ def validate(tokens: list) -> None:
     if not tokens:
         raise EmptyExpressionError("Пустое выражение")
 
-    if tokens[-1][0] == 'operator':
-        raise MissingNumError("Пропущенное число в конце выражения")
+    prev = None
 
-    first = tokens[0]
-    if first[0] == 'operator':
-
-        if first[1] in '*/':
-            raise MissingNumError("Пропущенное число в начале выражения")
+    for kind, value in tokens:
+        if kind == 'digit':
+            if prev == 'digit':
+                raise MissingOperatorError("Пропущенный оператор")
+            prev = 'digit'
 
         else:
-            if len(tokens) == 1 or tokens[1][0] == 'operator':
-                raise TwoBinaryOperatorsError("Два бинарных оператора подряд")
+            if value in '+-':
+                prev = 'operator'
+            else:
+                if prev is None:
+                    raise MissingNumError("Пропущенное число в начале выражения")
+                if prev == 'operator':
+                    raise TwoBinaryOperatorsError("Два бинарных оператора подряд")
+                prev = 'operator'
 
-    for i in range(len(tokens) - 1):
-        if tokens[i][0] == 'digit' and tokens[i + 1][0] == 'digit':
-            raise MissingOperatorError("Пропущенный оператор")
-
-        elif tokens[i][0] == 'operator' and tokens[i + 1][0] == 'operator':
-            is_unary = (
-                    tokens[i + 1][1] in '+-'
-                    and i + 2 < len(tokens)
-                    and tokens[i + 2][0] == 'digit'
-            )
-
-            if not is_unary:
-                raise TwoBinaryOperatorsError("Два бинарных оператора подряд")
+    if prev == 'operator':
+        raise MissingNumError("Пропущенное число в конце выражения")
 
 
 def resolve_unary(tokens: list) -> list:
-    """Сворачивает унарные + и - вместе со следующим числом.
+    """Сворачивает цепочку унарных + и - вместе со следующим числом.
 
-    Проходит по списку токенов и там, где + или - стоит в позиции
-    унарного знака, заменяет пару "знак" и "число" на одно число с уже
-    применённым знаком.
+    Там, где подряд идёт один или несколько унарных знаков, вычисляет
+    их суммарный знак (чётное число минусов даёт плюс, нечётное —
+    минус) и применяет его к идущему следом числу.
 
     Args:
         tokens: список токенов, прошедший проверку validate.
@@ -121,27 +116,31 @@ def resolve_unary(tokens: list) -> list:
         бинарные операторы.
     """
 
-    result: list[Token] = []
-
+    result = []
     i = 0
+
     while i < len(tokens):
-        if tokens[i][0] == 'digit':
+        kind, value = tokens[i]
+
+        if kind == 'digit' or value in '*/':
             result.append(tokens[i])
             i += 1
 
         else:
-            if tokens[i][1] in '*/':
-                result.append(tokens[i])
+            if i == 0 or result[-1][0] == 'operator':
+                sign = 1
+                while i < len(tokens) and tokens[i][0] == 'operator' and tokens[i][1] in '+-':
+                    if tokens[i][1] == '-':
+                        sign *= -1
+                    i += 1
+
+                number = float(tokens[i][1])
+                result.append(('digit', str(sign * number)))
                 i += 1
 
             else:
-                if i == 0 or result[-1][0] == 'operator':
-                    result.append(('digit', -tokens[i + 1][1] if tokens[i][1] == '-' else tokens[i + 1][1]))
-                    i += 2
-
-                else:
-                    result.append(tokens[i])
-                    i += 1
+                result.append(tokens[i])
+                i += 1
 
     return result
 
@@ -165,17 +164,17 @@ def calculate(tokens: list) -> float:
     """
 
     tokens = resolve_unary(tokens)
-    apply_priority_operators: list[Token] = []
+    apply_priority_operators = []
 
     i = 0
     while i < len(tokens):
         if tokens[i][0] == 'digit':
-            accumulation = tokens[i][1]
+            accumulation = float(tokens[i][1])
             j = i + 1
 
             while j < len(tokens) and tokens[j][0] == 'operator' and tokens[j][1] in '*/':
                 operator = tokens[j][1]
-                digit = tokens[j + 1][1]
+                digit = float(tokens[j + 1][1])
 
                 if operator == '/' and digit == 0:
                     raise DivisionByZeroError("Деление на ноль")
@@ -184,20 +183,18 @@ def calculate(tokens: list) -> float:
                                 else accumulation / digit)
                 j += 2
 
-            apply_priority_operators.append(('digit', accumulation))
+            apply_priority_operators.append(('digit', str(accumulation)))
             i = j
 
         else:
             apply_priority_operators.append(tokens[i])
             i += 1
 
-    result = apply_priority_operators[0][1]
-    assert isinstance(result, float)
+    result = float(apply_priority_operators[0][1])
 
     for i in range(1, len(apply_priority_operators) - 1, 2):
         operator = apply_priority_operators[i][1]
-        digit = apply_priority_operators[i + 1][1]
-        assert isinstance(digit, float)
+        digit = float(apply_priority_operators[i + 1][1])
 
         result = (result + digit if operator == '+'
                   else result - digit)

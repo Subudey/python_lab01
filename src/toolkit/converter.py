@@ -28,7 +28,7 @@ def get_group(unit: str) -> str:
         return 'temperature'
 
     else:
-        raise UnknownUnitError("Неизвестная группа")
+        raise UnknownUnitError("Неизвестная единица измерения")
 
 
 
@@ -80,7 +80,7 @@ def convert(value: float, unit_from: str, unit_to: str) -> float:
 
 
         if kelvin < 0:
-            raise BelowAbsoluteZeroError("negative kelvin")
+            raise BelowAbsoluteZeroError("Температура ниже абсолютного нуля")
 
 
         if unit_to == 'c':
