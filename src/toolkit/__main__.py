@@ -1,10 +1,9 @@
-"""Точка входа CLI для пакета toolkit: калькулятор и конвертер величин."""
-
 import argparse
 import sys
 
-from .calculator import calculate, tokenize, validate
-from .converter import convert
+from toolkit.calculator.calculator import get_result
+from toolkit.converter import convert
+
 from .errors import ToolkitError
 from .history_writer import save_to_history
 
@@ -51,9 +50,7 @@ def main() -> None:
 
     try:
         if args.command == "calc":
-            tokens = tokenize(args.expression)
-            validate(tokens)
-            result = calculate(tokens)
+            result = get_result(args.expression)
 
             save_to_history(args.expression, result)
 

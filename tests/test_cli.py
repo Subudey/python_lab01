@@ -1,5 +1,3 @@
-"""CLI-тесты: проверяют запуск пакета как процесса через python -m toolkit."""
-
 import subprocess
 import sys
 

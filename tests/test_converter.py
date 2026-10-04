@@ -1,5 +1,3 @@
-"""Тесты для конвертера величин: convert, get_group."""
-
 import pytest
 
 from toolkit.converter import convert, get_group

@@ -1,4 +1,3 @@
-"""Хранит константы необходимые для работы программы."""
 import json
 import re
 from pathlib import Path

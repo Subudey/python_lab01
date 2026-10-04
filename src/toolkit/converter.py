@@ -1,8 +1,9 @@
-
-"""Конвертация величин между единицами измерения длины, массы и температуры."""
-
-from .constants import LENGTH_UNITS, MASS_UNITS, TEMPERATURE_UNITS
-from .errors import BelowAbsoluteZeroError, IncompatibleUnitsError, UnknownUnitError
+from toolkit.constants import LENGTH_UNITS, MASS_UNITS, TEMPERATURE_UNITS
+from toolkit.errors import (
+    BelowAbsoluteZeroError,
+    IncompatibleUnitsError,
+    UnknownUnitError,
+)
 
 
 def get_group(unit: str) -> str:

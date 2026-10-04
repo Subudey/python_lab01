@@ -1,8 +1,8 @@
-"""Тесты для калькулятора: tokenize, validate, resolve_unary, calculate."""
-
 import pytest
 
-from toolkit.calculator import calculate, tokenize, validate
+from toolkit.calculator.calculator import get_result
+from toolkit.calculator.tokenization import tokenize
+from toolkit.calculator.validation import validate
 from toolkit.errors import (
     DivisionByZeroError,
     EmptyExpressionError,
@@ -12,70 +12,62 @@ from toolkit.errors import (
     TwoBinaryOperatorsError,
 )
 
-
-def run(expr: str) -> float:
-    """Прогоняет выражение через полный пайплайн калькулятора."""
-    tokens = tokenize(expr)
-    validate(tokens)
-    return calculate(tokens)
-
-
 # --- Позитивные тесты ---
 
 def test_simple_addition():
     """Проверяет базовое сложение."""
-    assert run("2 + 2") == 4.0
+    assert get_result("2 + 2") == 4.0
 
 
 def test_operator_priority():
     """Проверяет, что умножение выполняется раньше сложения."""
-    assert run("2 + 3 * 4") == 14.0
+    assert get_result("2 + 3 * 4") == 14.0
 
 
 def test_division():
     """Проверяет деление вещественных чисел."""
-    assert run("10 / 4") == 2.5
+    assert get_result("10 / 4") == 2.5
 
 
 def test_unary_minus_at_start():
     """Проверяет унарный минус в начале выражения."""
-    assert run("-5 + 10") == 5.0
+    assert get_result("-5 + 10") == 5.0
 
 
 def test_unary_plus_after_operator():
     """Проверяет унарный плюс после бинарного оператора."""
-    assert run("5 * +3") == 15.0
+    assert get_result("5 * +3") == 15.0
 
 
 def test_unary_minus_after_operator():
     """Проверяет унарный минус после бинарного оператора."""
-    assert run("5 * -3") == -15.0
+    assert get_result("5 * -3") == -15.0
 
 
 def test_ignores_whitespace():
     """Проверяет, что пробелы между токенами игнорируются."""
-    assert run("2+2") == run("2 + 2")
+    assert get_result("2+2") == get_result("2 + 2")
 
 
 def test_float_numbers():
     """Проверяет работу с вещественными числами."""
-    assert run("1.5 + 2.5") == 4.0
+    assert get_result("1.5 + 2.5") == 4.0
 
 
 def test_chained_multiplication():
     """Проверяет цепочку из нескольких операций умножения."""
-    assert run("2 * 3 * 4") == 24.0
+    assert get_result("2 * 3 * 4") == 24.0
 
 
 def test_mixed_priority_expression():
     """Проверяет смешанное выражение с разными приоритетами."""
-    assert run("10 - 2 * 3 + 4 / 2") == 6.0
+    assert get_result("10 - 2 * 3 + 4 / 2") == 6.0
 
 
 def test_multiple_unary_operators():
     """Проверяет, что цепочка из нескольких унарных знаков работает."""
-    assert run("5 - - 3") == 8.0
-    assert run("5 - - - 3") == 2.0
+    assert get_result("5 - - 3") == 8.0
+    assert get_result("5 - - - 3") == 2.0
 
 
 # --- Негативные тесты ---
@@ -119,4 +111,4 @@ def test_two_numbers_in_a_row_raise():
 def test_division_by_zero_raises():
     """Проверяет, что деление на ноль вызывает ошибку."""
     with pytest.raises(DivisionByZeroError):
-        run("5 / 0")
+        get_result("5 / 0")
